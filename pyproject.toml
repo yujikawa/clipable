@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "clipable"
+version = "0.1.5"
+description = "Your clipboard(Excel or Google spreadsheet) change to markdown clipboard"
+authors = ["yujikawa <ykyujikawa@gmail.com>"]
+repository = "https://github.com/yujikawa/clipable"
+readme = "README.md"
+license = "Apache-2.0"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+tabulate = "^0.8.6"
+pandas = "^1.0"
+pyperclip = "^1.7"
+
+[tool.poetry.dev-dependencies]
+pytest = "^3.0"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
+
+[tool.poetry.scripts]
+clipable = "clipable.cli:main"
