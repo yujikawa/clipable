@@ -2,6 +2,7 @@ import pandas as pd
 import pyperclip
 import argparse
 import io
+import pytablewriter
 
 
 def main():
@@ -21,9 +22,13 @@ def main():
         elif args.f == 'tsv':
             data = pd.read_csv(io.StringIO(pyperclip.paste()), sep="\t")
 
-        print(data.head(3).to_markdown())
+        writer = pytablewriter.MarkdownTableWriter()
+        writer.from_dataframe(data)
+        md = writer.dumps()
+
+        print(md)
         print('......Succeeded!!')
-        pyperclip.copy(data.to_markdown())
+        pyperclip.copy(md)
 
     except Exception as e:
         print('Error: cannot clipboard to markdown. Please check your clipboard')
