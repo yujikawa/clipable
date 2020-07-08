@@ -21,7 +21,8 @@ def main():
             data = pd.read_csv(io.StringIO(pyperclip.paste()))
         elif args.f == 'tsv':
             data = pd.read_csv(io.StringIO(pyperclip.paste()), sep="\t")
-
+        
+        data.fillna('', inplace=True)
         writer = pytablewriter.MarkdownTableWriter()
         writer.from_dataframe(data)
         md = writer.dumps()
