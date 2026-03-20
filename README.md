@@ -1,36 +1,51 @@
 # clipable
+
 [![Downloads](https://pepy.tech/badge/clipable)](https://pepy.tech/project/clipable)
 
-When we copy cells from spreadsheet or excel, clipboard change to markdown format using clipable.
+Convert spreadsheet clipboard data (Excel, Google Sheets, CSV, TSV) to a Markdown table instantly.
 
-![clipable](https://user-images.githubusercontent.com/14313351/76307902-0baf8b80-630d-11ea-9d01-337d8da9b448.gif)
-
-# How to install
+## Install
 
 ```
-$ pip install clipable
+pip install clipable
 ```
 
-# How to use
-1. Copy table from spreadsheet, csv etc.
-2. Open terminal, then run clipable.(if you will copy csv, run clipable -f csv)
-3. Paste to textarea.
+Or with uv:
 
+```
+uv tool install clipable
+```
 
-## space separated format
+## Usage
+
+### Watch mode (recommended)
+
+Start the watcher once and forget about it. Every time you copy cells from a spreadsheet, the clipboard is automatically converted to Markdown — just paste.
+
+```
+clipable watch
+```
+
+### One-shot conversion
+
+Copy cells from a spreadsheet, then run:
+
 ```
 clipable
 ```
 
-## csv format
-```
-clipable -f csv
-```
+The clipboard is replaced with a Markdown table. Paste it wherever you need.
 
-## tsv format
-```
-clipable -f tsv
-```
+#### Format options
 
-# LICENSE
-Apache 2.0
+| Flag | Description |
+|------|-------------|
+| `-f tsv` | Force TSV parsing |
+| `-f csv` | Force CSV parsing |
+| `-l <sep>` | In-cell line break replacement (default: `<br>`) |
+
+Format is auto-detected if `-f` is omitted.
+
+## License
+
+MIT

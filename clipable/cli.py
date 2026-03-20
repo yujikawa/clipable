@@ -1,42 +1,87 @@
-import os
-import pandas as pd
-import pyperclip
-import argparse
-import io
-import pytablewriter
+from __future__ import annotations
 
-def main():
-    parser = argparse.ArgumentParser(
-        description='Your clipboard(Excel or Google spreadsheet) change to markdown clipboard',
-        add_help=True,
-    )
-    parser.add_argument('-f', help='Please input format type(csv)', default=None, type=str)
-    parser.add_argument('-l', help='Please input linesep', default='<br>', type=str)
+from typing import Annotated, Optional
+
+import pyperclip
+import typer
+from rich.console import Console
+from rich.panel import Panel
+
+from . import __version__
+from .converter import convert_to_markdown, detect_format
+from .watcher import watch as _watch
+
+app = typer.Typer(
+    name="clipable",
+    help="Convert clipboard spreadsheet data to a Markdown table.",
+    add_completion=False,
+)
+console = Console()
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        console.print(f"clipable [bold cyan]{__version__}[/bold cyan]")
+        raise typer.Exit()
+
+
+@app.callback(invoke_without_command=True)
+def main(
+    ctx: typer.Context,
+    fmt: Annotated[
+        Optional[str],
+        typer.Option("-f", "--format", help="Format override: csv, tsv (auto-detected if omitted)"),
+    ] = None,
+    linesep: Annotated[
+        str,
+        typer.Option("-l", "--linesep", help="Replacement string for in-cell line breaks"),
+    ] = "<br>",
+    version: Annotated[
+        Optional[bool],
+        typer.Option("--version", callback=_version_callback, is_eager=True, help="Show version and exit"),
+    ] = None,
+) -> None:
+    """Convert clipboard spreadsheet data to a Markdown table and write it back to the clipboard."""
+    if ctx.invoked_subcommand is not None:
+        return
+
+    text = pyperclip.paste()
+
+    if not text.strip():
+        console.print("[bold red]✗[/bold red] Clipboard is empty.")
+        raise typer.Exit(1)
+
+    resolved_fmt = fmt or detect_format(text)
+    if resolved_fmt is None and fmt is None:
+        console.print(
+            "[bold yellow]⚠[/bold yellow]  Could not detect table format. Falling back to whitespace-separated."
+        )
 
     try:
-
-        args = parser.parse_args()
-        if args.f is None:
-            data = pd.read_clipboard()
-        elif args.f == 'csv':
-            data = pd.read_csv(io.StringIO(pyperclip.paste()))
-        elif args.f == 'tsv':
-            data = pd.read_csv(io.StringIO(pyperclip.paste()), sep="\t")
-
-        data = data.replace(os.linesep, args.l, regex=True)
-        
-        data.fillna('', inplace=True)
-        writer = pytablewriter.MarkdownTableWriter()
-        writer.from_dataframe(data)
-        md = writer.dumps()
-
-        print(md)
-        print('......Succeeded!!')
-        pyperclip.copy(md)
-
+        md = convert_to_markdown(text, fmt=fmt, linesep=linesep)
     except Exception as e:
-        print('Error: cannot clipboard to markdown. Please check your clipboard')
+        console.print(f"[bold red]✗[/bold red] Conversion failed: [red]{e}[/red]")
+        raise typer.Exit(1)
+
+    console.print(Panel(md, border_style="green", title="Markdown"))
+    pyperclip.copy(md)
+    console.print("[bold green]✓[/bold green] Clipboard updated. Ready to paste.")
 
 
-if __name__ == '__main__':
-    main()
+@app.command()
+def watch(
+    linesep: Annotated[
+        str,
+        typer.Option("-l", "--linesep", help="Replacement string for in-cell line breaks"),
+    ] = "<br>",
+    interval: Annotated[
+        float,
+        typer.Option("-i", "--interval", help="Polling interval in seconds"),
+    ] = 0.5,
+) -> None:
+    """Watch the clipboard and auto-convert spreadsheet data to Markdown.
+
+    Once running, simply copy cells from a spreadsheet — the clipboard will
+    be converted to Markdown automatically, ready to paste.
+    """
+    _watch(linesep=linesep, interval=interval)
