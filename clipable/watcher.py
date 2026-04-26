@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import time
 
-import pyperclip
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
+from . import clipboard
 from .converter import convert_to_markdown, detect_format
 
 console = Console()
@@ -32,20 +32,20 @@ def watch(linesep: str = "<br>", interval: float = 0.5) -> None:
         )
     )
 
-    last_text = pyperclip.paste()
+    last_text = clipboard.paste()
     # Track our own Markdown output to avoid re-converting it
     converted_outputs: set[str] = set()
 
     try:
         while True:
-            current = pyperclip.paste()
+            current = clipboard.paste()
 
             if current != last_text and current not in converted_outputs:
                 fmt = detect_format(current)
                 if fmt is not None:
                     try:
                         md = convert_to_markdown(current, fmt=fmt, linesep=linesep)
-                        pyperclip.copy(md)
+                        clipboard.copy(md)
                         converted_outputs.add(md)
 
                         console.print(
