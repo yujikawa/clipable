@@ -3,7 +3,7 @@ from clipable.converter import detect_format, convert_to_markdown
 
 
 def test_version():
-    assert __version__ == "0.3.0"
+    assert __version__ == "0.4.0"
 
 
 class TestDetectFormat:
