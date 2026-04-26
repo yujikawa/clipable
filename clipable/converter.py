@@ -1,10 +1,8 @@
 from __future__ import annotations
 
+import csv
 import io
 import re
-
-import pandas as pd
-import pytablewriter
 
 
 def detect_format(text: str) -> str | None:
@@ -17,17 +15,45 @@ def detect_format(text: str) -> str | None:
     if len(lines) < 2:
         return None
 
-    # TSV: tabs appear consistently across lines
     tab_counts = [line.count("\t") for line in lines]
     if tab_counts[0] > 0 and max(tab_counts) - min(tab_counts) <= 1:
         return "tsv"
 
-    # CSV: commas appear consistently across lines
     comma_counts = [line.count(",") for line in lines]
     if comma_counts[0] > 0 and max(comma_counts) - min(comma_counts) <= 1:
         return "csv"
 
     return None
+
+
+def _parse(text: str, delimiter: str) -> tuple[list[str], list[list[str]]]:
+    reader = csv.reader(io.StringIO(text), delimiter=delimiter)
+    rows = list(reader)
+    if not rows:
+        raise ValueError("No data found")
+    return rows[0], rows[1:]
+
+
+def _replace_linesep(value: str, linesep: str) -> str:
+    return re.sub(r"\r\n|\r|\n", linesep, value)
+
+
+def _to_markdown(headers: list[str], rows: list[list[str]], linesep: str) -> str:
+    processed = [
+        [_replace_linesep(cell, linesep) for cell in row]
+        for row in rows
+    ]
+    col_widths = [
+        max(len(h), max((len(r[i]) for r in processed if i < len(r)), default=0))
+        for i, h in enumerate(headers)
+    ]
+
+    def fmt_row(cells: list[str]) -> str:
+        padded = cells + [""] * (len(col_widths) - len(cells))
+        return "| " + " | ".join(c.ljust(w) for c, w in zip(padded, col_widths)) + " |"
+
+    sep = "| " + " | ".join("-" * w for w in col_widths) + " |"
+    return "\n".join([fmt_row(headers), sep] + [fmt_row(r) for r in processed])
 
 
 def convert_to_markdown(
@@ -48,18 +74,13 @@ def convert_to_markdown(
     resolved_fmt = fmt or detect_format(text)
 
     if resolved_fmt == "tsv":
-        df = pd.read_csv(io.StringIO(text), sep="\t")
+        headers, rows = _parse(text, "\t")
     elif resolved_fmt == "csv":
-        df = pd.read_csv(io.StringIO(text))
+        headers, rows = _parse(text, ",")
     else:
-        # Fallback: whitespace-separated
-        df = pd.read_csv(io.StringIO(text), sep=r"\s+", engine="python")
+        # Fallback: split on any whitespace run
+        lines = [l for l in text.strip().splitlines() if l.strip()]
+        headers = lines[0].split()
+        rows = [l.split() for l in lines[1:]]
 
-    # Replace in-cell line breaks
-    df = df.replace(r"\n|\r\n|\r", linesep, regex=True)
-    df = df.fillna("")
-
-    writer = pytablewriter.MarkdownTableWriter()
-    writer.from_dataframe(df)
-    writer.margin = 1
-    return writer.dumps()
+    return _to_markdown(headers, rows, linesep)

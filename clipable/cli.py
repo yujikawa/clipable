@@ -8,8 +8,6 @@ from rich.console import Console
 from rich.panel import Panel
 
 from . import __version__
-from .converter import convert_to_markdown, detect_format
-from .watcher import watch as _watch
 
 app = typer.Typer(
     name="clipable",
@@ -44,6 +42,8 @@ def main(
     """Convert clipboard spreadsheet data to a Markdown table and write it back to the clipboard."""
     if ctx.invoked_subcommand is not None:
         return
+
+    from .converter import convert_to_markdown, detect_format  # noqa: PLC0415
 
     text = pyperclip.paste()
 
@@ -84,4 +84,6 @@ def watch(
     Once running, simply copy cells from a spreadsheet — the clipboard will
     be converted to Markdown automatically, ready to paste.
     """
+    from .watcher import watch as _watch  # noqa: PLC0415
+
     _watch(linesep=linesep, interval=interval)
