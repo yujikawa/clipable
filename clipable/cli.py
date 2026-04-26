@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Annotated, Optional
 
-import pyperclip
 import typer
 from rich.console import Console
 from rich.panel import Panel
@@ -44,8 +43,9 @@ def main(
         return
 
     from .converter import convert_to_markdown, detect_format  # noqa: PLC0415
+    from . import clipboard  # noqa: PLC0415
 
-    text = pyperclip.paste()
+    text = clipboard.paste()
 
     if not text.strip():
         console.print("[bold red]✗[/bold red] Clipboard is empty.")
@@ -64,7 +64,7 @@ def main(
         raise typer.Exit(1)
 
     console.print(Panel(md, border_style="green", title="Markdown"))
-    pyperclip.copy(md)
+    clipboard.copy(md)
     console.print("[bold green]✓[/bold green] Clipboard updated. Ready to paste.")
 
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.0] - 2026-04-26
+
+### Changed
+- Replaced `pyperclip` dependency with a built-in `clipboard` module using subprocess only (no `ctypes`)
+- Supports macOS (`pbcopy`/`pbpaste`), Linux (`xclip`/`xsel`/`wl-clipboard`), Windows and WSL2 (`clip.exe`/`powershell.exe`)
+
 ## [0.4.0] - 2026-04-26
 
 ### Changed
